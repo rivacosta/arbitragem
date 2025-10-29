@@ -1,21 +1,18 @@
-// index.js - Bot de Arbitragem Triangular (MEXC Spot - VERSÃO FINAL OTIMIZADA)
+// index.js - Bot de Arbitragem Triangular (MEXC Spot - VERSÃO FINAL CORRIGIDA)
 
 const ccxt = require('ccxt');
 require('dotenv').config();
-const beep = require('beep'); // 🔔 FUNÇÃO DE ALERTA SONORO
+// A linha "const beep = require('beep');" foi removida para evitar o erro de módulo.
 
 // ===========================================
 // CONFIGURAÇÕES GLOBAIS DO BOT
 // ===========================================
 
 // --- Arbitragem Triangular (Interna - MEXC) ---
-// ESTRUTURA: { alt: Nome, pair1: ALT/USDT, pair2: ALT/BTC, pair3: BTC/USDT }
+// LISTA EXPANDIDA DE PARES PARA MAIS OPORTUNIDADES
 const trianglesToMonitor = [
-    // Pares de alta liquidez
     { alt: 'ETH', pair1: 'ETH/USDT', pair2: 'ETH/BTC', pair3: 'BTC/USDT' },
     { alt: 'SOL', pair1: 'SOL/USDT', pair2: 'SOL/BTC', pair3: 'BTC/USDT' },
-    
-    // Pares expandidos para aumentar oportunidades
     { alt: 'LTC', pair1: 'LTC/USDT', pair2: 'LTC/BTC', pair3: 'BTC/USDT' },
     { alt: 'ADA', pair1: 'ADA/USDT', pair2: 'ADA/BTC', pair3: 'BTC/USDT' },
     { alt: 'MATIC', pair1: 'MATIC/USDT', pair2: 'MATIC/BTC', pair3: 'BTC/USDT' },
@@ -25,8 +22,8 @@ const trianglesToMonitor = [
     { alt: 'DOT', pair1: 'DOT/USDT', pair2: 'DOT/BTC', pair3: 'BTC/USDT' },
 ];
 
-// ⭐️ AJUSTE CRUCIAL: REDUÇÃO PARA 0.01% PARA AUMENTAR A FREQUÊNCIA ⭐️
-const minProfitTriangular = 0.0001; // 0.01% de lucro líquido MÍNIMO 
+// LUCRO MÍNIMO AJUSTADO PARA 0.01% para aumentar a frequência de operações.
+const minProfitTriangular = 0.0001; 
 
 // --- Configurações de Execução ---
 const interval = 3000; // Intervalo de busca (3 segundos)
@@ -37,7 +34,6 @@ const tradeAmountUSDT = 10; // CAPITAL INICIAL POR OPERAÇÃO (em USDT)
 // INSTÂNCIAS DAS CORRETORAS (APENAS MEXC)
 // ===========================================
 
-// BLOCO DE TESTE DE VARIÁVEIS DE AMBIENTE
 console.log('--- TESTE DE LEITURA DE CHAVES ---');
 console.log('API Key lida:', process.env.MEXC_API_KEY ? 'Lida com sucesso' : '❌ ERRO: Chave API não lida');
 console.log('Secret Key lida:', process.env.MEXC_SECRET ? 'Lida com sucesso' : '❌ ERRO: Chave Secreta não lida');
@@ -82,7 +78,7 @@ async function executeTriangularArbitrage(triangle, profitPercent, prices, direc
     }
 
     console.log(`\n================== 🚀 EXECUÇÃO INICIADA na MEXC ==================`);
-    beep(3); // 🔔 TOCA 3 BEESPS QUANDO A ARBITRAGEM COMEÇA
+    console.log('\x07\x07\x07'); // 🔔 ALERTA SONORO (BELL CHAR)
     console.log(`  Triângulo: ${alt}/BTC/USDT | Lucro Líquido: ${profitPercent.toFixed(4)}% | Rota: ${direction}`);
     console.log(`  Capital: ${tradeAmountUSDT} USDT`);
 
@@ -161,7 +157,6 @@ async function checkTriangularArbitrage(exchange, triangle) {
         } 
 
     } catch (error) {
-        // Ignora erros de "symbol not supported" para manter o log limpo
         if (!error.message.includes('symbol is not supported')) {
             // console.log(`❌ ERRO NO MONITORAMENTO TRIANGULAR de ${alt}: ${error.message}`);
         }
@@ -177,7 +172,6 @@ async function mainLoop() {
     console.log('----------------------------------------------------');
     console.log(`[${new Date().toLocaleTimeString()}] INICIANDO BUSCA TRIANGULAR...`);
     
-    // 1. Checagem de Saldo (Obrigatória antes de negociar)
     let balancesChecked = true;
     try {
         const mexcBalance = await mexc.fetchBalance();
@@ -195,7 +189,6 @@ async function mainLoop() {
         return; 
     }
     
-    // 2. Monitoramento de Arbitragem Triangular (Se Saldo OK)
     if (balancesChecked) {
         for (const triangle of trianglesToMonitor) {
             await checkTriangularArbitrage(mexc, triangle); 
@@ -211,7 +204,8 @@ async function mainLoop() {
 // ===========================================
 
 (async () => {
-    // 🔔 Lembre-se de instalar: npm install ccxt dotenv beep
-    await loadMarkets(); // Carrega mercados uma vez
-    setInterval(mainLoop, interval); // Inicia o loop principal
+    // ⚠️ Lembre-se de verificar se as chaves API no .env estão corretas
+    // O bot DEVE mostrar: "API Key lida: Lida com sucesso" no início.
+    await loadMarkets(); 
+    setInterval(mainLoop, interval); 
 })();
