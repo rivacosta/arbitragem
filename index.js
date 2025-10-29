@@ -34,11 +34,25 @@ const tradeAmountUSDT = 10; // VALOR EM USDT PARA NEGOCIAR (AJUSTE CONFORME SEU 
 // INSTÂNCIAS DAS CORRETORAS (APENAS MEXC)
 // ===========================================
 
+// ⭐️ INÍCIO DA ALTERAÇÃO PARA CORREÇÃO DE TEMPO ⭐️
+// Seu fuso horário é GMT -3. O servidor MEXC é UTC (GMT 0).
+// Precisamos compensar o atraso adicionando 3 horas em milissegundos.
+const TIME_OFFSET_MS = 3 * 60 * 60 * 1000; // 10.800.000 ms
+
 const mexc = new ccxt.mexc({
     apiKey: process.env.MEXC_API_KEY,
     secret: process.env.MEXC_SECRET,
-    options: { defaultFees: { trading: { taker: mexcFee } } }
+    options: { 
+        defaultFees: { 
+            trading: { 
+                taker: mexcFee 
+            } 
+        },
+        // APLICA O DESLOCAMENTO DE TEMPO
+        'timeDifference': TIME_OFFSET_MS, 
+    }
 });
+// ⭐️ FIM DA ALTERAÇÃO PARA CORREÇÃO DE TEMPO ⭐️
 
 // ===========================================
 // FUNÇÃO DE EXECUÇÃO DE ORDEM (LOG APENAS)
@@ -153,6 +167,7 @@ async function mainLoop() {
 
     } catch (error) {
         console.error('❌ ERRO ao checar saldos da MEXC. Verifique suas chaves API. Pulando negociações.');
+        // Se o erro for devido ao tempo, a linha abaixo será pulada (mas mantemos o return para garantir)
         return; 
     }
     
@@ -162,7 +177,7 @@ async function mainLoop() {
             await checkTriangularArbitrage(mexc, triangle); 
         }
     } else {
-         console.log('Monitoramento de Arbitragem Triangular desativado devido ao saldo de USDT insuficiente.');
+          console.log('Monitoramento de Arbitragem Triangular desativado devido ao saldo de USDT insuficiente.');
     }
     
     console.log(`Busca Finalizada. Esperando ${interval / 1000}s...`);
