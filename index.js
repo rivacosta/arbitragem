@@ -34,13 +34,23 @@ const tradeAmountUSDT = 10; // VALOR EM USDT PARA NEGOCIAR (AJUSTE CONFORME SEU 
 // INSTÂNCIAS DAS CORRETORAS (APENAS MEXC)
 // ===========================================
 
-// ⭐️ INÍCIO DA ALTERAÇÃO PARA CORREÇÃO DE TEMPO ⭐️
 // Seu fuso horário é GMT -3. O servidor MEXC é UTC (GMT 0).
-// Precisamos compensar o atraso adicionando 3 horas em milissegundos.
+// O 'timeDifference' adiciona 3 horas em milissegundos para compensar o seu horário local.
 const TIME_OFFSET_MS = 3 * 60 * 60 * 1000; // 10.800.000 ms
 
+// ⭐️ BLOCO DE TESTE DE VARIÁVEIS DE AMBIENTE ⭐️
+// Se as chaves não estiverem sendo lidas, o erro está no seu arquivo .env.
+console.log('--- TESTE DE LEITURA DE CHAVES ---');
+console.log('API Key lida:', process.env.MEXC_API_KEY ? 'Lida com sucesso' : 'ERRO: Chave API não lida');
+console.log('Secret Key lida:', process.env.MEXC_SECRET ? 'Lida com sucesso' : 'ERRO: Chave Secreta não lida');
+console.log('Comprimento da API Key:', process.env.MEXC_API_KEY ? process.env.MEXC_API_KEY.length : 'N/A');
+console.log('Comprimento da Secret Key:', process.env.MEXC_SECRET ? process.env.MEXC_SECRET.length : 'N/A');
+console.log('---------------------------------');
+// ---------------------------------
+
 const mexc = new ccxt.mexc({
-    apiKey: process.env.MEXC_API_KEY,
+    // CORREÇÃO FINAL: USAR DIRETAMENTE process.env para evitar o ReferenceError
+    apiKey: process.env.MEXC_API_KEY,  
     secret: process.env.MEXC_SECRET,
     options: { 
         defaultFees: { 
@@ -48,11 +58,10 @@ const mexc = new ccxt.mexc({
                 taker: mexcFee 
             } 
         },
-        // APLICA O DESLOCAMENTO DE TEMPO
+        // APLICA O DESLOCAMENTO DE TEMPO (Correção de Fuso Horário)
         'timeDifference': TIME_OFFSET_MS, 
     }
 });
-// ⭐️ FIM DA ALTERAÇÃO PARA CORREÇÃO DE TEMPO ⭐️
 
 // ===========================================
 // FUNÇÃO DE EXECUÇÃO DE ORDEM (LOG APENAS)
@@ -167,7 +176,6 @@ async function mainLoop() {
 
     } catch (error) {
         console.error('❌ ERRO ao checar saldos da MEXC. Verifique suas chaves API. Pulando negociações.');
-        // Se o erro for devido ao tempo, a linha abaixo será pulada (mas mantemos o return para garantir)
         return; 
     }
     
