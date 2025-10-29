@@ -8,12 +8,24 @@ require('dotenv').config();
 // ===========================================
 
 // --- Arbitragem Triangular (Interna - MEXC) ---
-// Estrutura: { alt: Nome, pair1: ALT/USDT, pair2: ALT/BTC, pair3: BTC/USDT }
+// ESTRUTURA: { alt: Nome, pair1: ALT/USDT, pair2: ALT/BTC, pair3: BTC/USDT }
 const trianglesToMonitor = [
+    // Pares originais (maior liquidez)
     { alt: 'ETH', pair1: 'ETH/USDT', pair2: 'ETH/BTC', pair3: 'BTC/USDT' },
     { alt: 'SOL', pair1: 'SOL/USDT', pair2: 'SOL/BTC', pair3: 'BTC/USDT' },
-    // Adicione mais triângulos aqui...
+    
+    // Novos triângulos de alta/média liquidez (mais chances de ineficiência)
+    { alt: 'LTC', pair1: 'LTC/USDT', pair2: 'LTC/BTC', pair3: 'BTC/USDT' },
+    { alt: 'ADA', pair1: 'ADA/USDT', pair2: 'ADA/BTC', pair3: 'BTC/USDT' },
+    { alt: 'MATIC', pair1: 'MATIC/USDT', pair2: 'MATIC/BTC', pair3: 'BTC/USDT' },
+    { alt: 'XRP', pair1: 'XRP/USDT', pair2: 'XRP/BTC', pair3: 'BTC/USDT' },
+    { alt: 'DOGE', pair1: 'DOGE/USDT', pair2: 'DOGE/BTC', pair3: 'BTC/USDT' },
+    { alt: 'TRX', pair1: 'TRX/USDT', pair2: 'TRX/BTC', pair3: 'BTC/USDT' },
+    { alt: 'DOT', pair1: 'DOT/USDT', pair2: 'DOT/BTC', pair3: 'BTC/USDT' },
+    
+    // Adicione mais triângulos aqui se desejar (verifique a existência dos pares na MEXC)
 ];
+
 const minProfitTriangular = 0.0005; // 0.05% de lucro líquido MÍNIMO
 
 // --- Configurações de Execução ---
@@ -25,7 +37,7 @@ const tradeAmountUSDT = 10; // CAPITAL INICIAL POR OPERAÇÃO (em USDT)
 // INSTÂNCIAS DAS CORRETORAS (APENAS MEXC)
 // ===========================================
 
-// ⭐️ BLOCO DE TESTE DE VARIÁVEIS DE AMBIENTE ⭐️
+// BLOCO DE TESTE DE VARIÁVEIS DE AMBIENTE
 console.log('--- TESTE DE LEITURA DE CHAVES ---');
 console.log('API Key lida:', process.env.MEXC_API_KEY ? 'Lida com sucesso' : '❌ ERRO: Chave API não lida');
 console.log('Secret Key lida:', process.env.MEXC_SECRET ? 'Lida com sucesso' : '❌ ERRO: Chave Secreta não lida');
@@ -40,17 +52,14 @@ const mexc = new ccxt.mexc({
                 taker: mexcFee 
             } 
         },
-        // Correção de Fuso Horário: CCXT ajusta automaticamente o offset
+        // CORREÇÃO: CCXT ajusta automaticamente o offset (mais robusto)
         'adjustForTimeDifference': true, 
     },
-    // Ajuste o timeout se as requisições demorarem
     timeout: 15000 
 });
 
-// Armazenamento de informações de mercado (necessário para formatação de lotes)
 let marketInfo = {}; 
 
-// Função para carregar informações de mercado
 async function loadMarkets() {
     try {
         console.log("Carregando mercados da MEXC...");
@@ -61,7 +70,6 @@ async function loadMarkets() {
     }
 }
 
-
 // ===========================================
 // FUNÇÃO DE EXECUÇÃO DE ORDEM (AGORA ATIVA)
 // ===========================================
@@ -69,7 +77,6 @@ async function loadMarkets() {
 async function executeTriangularArbitrage(triangle, profitPercent, prices, direction) {
     const { alt, pair1, pair2, pair3 } = triangle;
     
-    // Assegura que as informações de mercado estão carregadas para usar o .amountToPrecision
     if (!marketInfo[pair1] || !marketInfo[pair2] || !marketInfo[pair3]) {
         console.error("❌ Erro: Informações de mercado não carregadas. Pulando execução.");
         return;
@@ -84,35 +91,30 @@ async function executeTriangularArbitrage(triangle, profitPercent, prices, direc
             const [price1, price2, price3] = prices;
 
             // 1. COMPRAR ALT com USDT (em ALT/USDT)
-            // Lote: 10 USDT / Preço Ask
             let amount1_alt = tradeAmountUSDT / price1;
-            amount1_alt = mexc.amountToPrecision(pair1, amount1_alt); // Ajusta precisão
+            amount1_alt = mexc.amountToPrecision(pair1, amount1_alt); 
             console.log(`  -> 1. BUY ${amount1_alt} ${alt} em ${pair1} @ ${price1}`);
             const order1 = await mexc.createMarketBuyOrder(pair1, amount1_alt); 
             
             // 2. VENDER ALT por BTC (em ALT/BTC)
-            // Lote: O resultado da Ordem 1 (em ALT)
-            let amount2_alt = parseFloat(order1.filled); // Quantidade exata comprada
+            let amount2_alt = parseFloat(order1.filled); 
             amount2_alt = mexc.amountToPrecision(pair2, amount2_alt);
             console.log(`  -> 2. SELL ${amount2_alt} ${alt} em ${pair2} @ ${price2}`);
             const order2 = await mexc.createMarketSellOrder(pair2, amount2_alt);
             
             // 3. VENDER BTC por USDT (em BTC/USDT)
-            // Lote: A quantidade de BTC obtida na Ordem 2
-            let amount3_btc = parseFloat(order2.cost); // cost é o que você recebeu (BTC)
+            let amount3_btc = parseFloat(order2.cost); 
             amount3_btc = mexc.amountToPrecision(pair3, amount3_btc);
             console.log(`  -> 3. SELL ${amount3_btc} BTC em ${pair3} @ ${price3}`);
             const order3 = await mexc.createMarketSellOrder(pair3, amount3_btc);
             
             console.log(`\n✅ ARBITRAGEM COMPLETA. Retorno Final (Aproximado): ${parseFloat(order3.cost).toFixed(4)} USDT.`);
         } else {
-             // A lógica de execução da Rota Inversa (USDT -> BTC -> ALT -> USDT)
-             // deve ser implementada aqui, seguindo os mesmos passos.
-             console.log("  ⚠️ Rota Inversa detectada, mas a execução está desabilitada neste modelo.");
+             // Esta seção precisaria ser implementada se a Rota Inversa for lucrativa
+             console.log("  ⚠️ Rota Inversa detectada, mas a execução está desabilitada para simplificação.");
         }
 
     } catch (error) {
-        // Erro comum: Falha na Ordem de Mercado ou problema de saldo/lote
         console.error(`\n❌ ERRO FATAL AO EXECUTAR ARBITRAGEM: ${error.message}`);
         console.log(`  Verifique se o seu saldo e as precisões de lote estão corretas.`);
     }
@@ -130,9 +132,9 @@ async function checkTriangularArbitrage(exchange, triangle) {
     try {
         // 1. BUSCAR LIVROS DE OFERTAS
         const [book1, book2, book3] = await Promise.all([
-            exchange.fetchOrderBook(pair1), // Ex: SOL/USDT
-            exchange.fetchOrderBook(pair2), // Ex: SOL/BTC
-            exchange.fetchOrderBook(pair3), // Ex: BTC/USDT
+            exchange.fetchOrderBook(pair1), 
+            exchange.fetchOrderBook(pair2), 
+            exchange.fetchOrderBook(pair3), 
         ]);
         
         // Cenario 1: Rota Direta (USDT -> Alt -> BTC -> USDT)
@@ -141,7 +143,7 @@ async function checkTriangularArbitrage(exchange, triangle) {
         const price3_sell_btc_usdt = book3.bids[0][0]; 
 
         let finalUSDT_route1 = (1 / price1_buy_alt_usdt) * price2_sell_alt_btc * price3_sell_btc_usdt;
-        const netProfit1 = finalUSDT_route1 - 1 - (3 * mexcFee); // 3 taxas
+        const netProfit1 = finalUSDT_route1 - 1 - (3 * mexcFee); 
         
         // Cenario 2: Rota Inversa (USDT -> BTC -> Alt -> USDT)
         const price1_buy_btc_usdt = book3.asks[0][0];
@@ -149,9 +151,9 @@ async function checkTriangularArbitrage(exchange, triangle) {
         const price3_sell_alt_usdt = book1.bids[0][0];
 
         let finalUSDT_route2 = (1 / price1_buy_btc_usdt) / price2_buy_alt_btc * price3_sell_alt_usdt;
-        const netProfit2 = finalUSDT_route2 - 1 - (3 * mexcFee); // 3 taxas
+        const netProfit2 = finalUSDT_route2 - 1 - (3 * mexcFee); 
 
-        // ANÁLISE E LOG
+        // ANÁLISE E EXECUÇÃO
         if (netProfit1 > minProfitTriangular) {
             await executeTriangularArbitrage(triangle, (netProfit1 * 100), [price1_buy_alt_usdt, price2_sell_alt_btc, price3_sell_btc_usdt], 'Direta');
         } else if (netProfit2 > minProfitTriangular) {
@@ -159,8 +161,9 @@ async function checkTriangularArbitrage(exchange, triangle) {
         } 
 
     } catch (error) {
+        // Ignora erros de "symbol not supported" para manter o log limpo
         if (!error.message.includes('symbol is not supported')) {
-            // Log de erros silenciosos (ex: symbol not supported) para manter o console limpo
+            // console.log(`❌ ERRO NO MONITORAMENTO TRIANGULAR de ${alt}: ${error.message}`);
         }
     }
 }
@@ -204,10 +207,9 @@ async function mainLoop() {
 
 
 // ===========================================
-// INÍCIO DO BOT
+// INÍCIO DO BOT (SETUP DO PM2)
 // ===========================================
 
-// Chamada inicial para carregar as informações de mercado e iniciar o loop
 (async () => {
     await loadMarkets(); // Carrega mercados uma vez
     setInterval(mainLoop, interval); // Inicia o loop principal
