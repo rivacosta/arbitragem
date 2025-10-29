@@ -2,6 +2,7 @@
 
 const ccxt = require('ccxt');
 require('dotenv').config();
+const beep = require('beep'); // 🔔 FUNÇÃO DE ALERTA SONORO
 
 // ===========================================
 // CONFIGURAÇÕES GLOBAIS DO BOT
@@ -81,6 +82,7 @@ async function executeTriangularArbitrage(triangle, profitPercent, prices, direc
     }
 
     console.log(`\n================== 🚀 EXECUÇÃO INICIADA na MEXC ==================`);
+    beep(3); // 🔔 TOCA 3 BEESPS QUANDO A ARBITRAGEM COMEÇA
     console.log(`  Triângulo: ${alt}/BTC/USDT | Lucro Líquido: ${profitPercent.toFixed(4)}% | Rota: ${direction}`);
     console.log(`  Capital: ${tradeAmountUSDT} USDT`);
 
@@ -209,6 +211,7 @@ async function mainLoop() {
 // ===========================================
 
 (async () => {
+    // 🔔 Lembre-se de instalar: npm install ccxt dotenv beep
     await loadMarkets(); // Carrega mercados uma vez
     setInterval(mainLoop, interval); // Inicia o loop principal
 })();
