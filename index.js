@@ -1,71 +1,173 @@
-// index.js
+// index.js - Bot de Arbitragem Triangular (Apenas MEXC - V7.0)
 
-// 1. Importa a biblioteca CCXT e o dotenv (para ler o arquivo .env)
-// O require('dotenv').config() lerá as chaves do seu arquivo .env local.
 const ccxt = require('ccxt');
 require('dotenv').config();
 
-// 2. Define o par de moedas que queremos negociar
-// Vamos começar com um par comum, como Bitcoin (BTC) contra Dólar (USDT).
-const symbol = 'BTC/USDT'; 
+// ===========================================
+// CONFIGURAÇÕES GLOBAIS DO BOT
+// ===========================================
 
-// 3. Cria as instâncias das corretoras, lendo as chaves do .env
-// Note que o nome das variáveis (MEXC_API_KEY, BITMART_SECRET, etc.)
-// deve ser EXATAMENTE igual ao que você usou no arquivo .env.
+// --- Arbitragem Triangular (Interna - MEXC) ---
+// Estrutura: { alt: Nome, pair1: ALT/USDT, pair2: ALT/BTC, pair3: BTC/USDT }
+// A base (USDT) e a moeda intermediária (BTC) devem ser comuns a todos os pares.
+const trianglesToMonitor = [
+    { alt: 'ETH', pair1: 'ETH/USDT', pair2: 'ETH/BTC', pair3: 'BTC/USDT' },
+    { alt: 'SOL', pair1: 'SOL/USDT', pair2: 'SOL/BTC', pair3: 'BTC/USDT' },
+    { alt: 'LINK', pair1: 'LINK/USDT', pair2: 'LINK/BTC', pair3: 'BTC/USDT' },
+    { alt: 'MATIC', pair1: 'MATIC/USDT', pair2: 'MATIC/BTC', pair3: 'BTC/USDT' },
+    { alt: 'AVAX', pair1: 'AVAX/USDT', pair2: 'AVAX/BTC', pair3: 'BTC/USDT' },
+    { alt: 'DOT', pair1: 'DOT/USDT', pair2: 'DOT/BTC', pair3: 'BTC/USDT' },
+    { alt: 'LTC', pair1: 'LTC/USDT', pair2: 'LTC/BTC', pair3: 'BTC/USDT' },
+    { alt: 'PEPE', pair1: 'PEPE/USDT', pair2: 'PEPE/BTC', pair3: 'BTC/USDT' },
+    { alt: 'SHIB', pair1: 'SHIB/USDT', pair2: 'SHIB/BTC', pair3: 'BTC/USDT' },
+    { alt: 'DOGE', pair1: 'DOGE/USDT', pair2: 'DOGE/BTC', pair3: 'BTC/USDT' },
+    // Adicione mais triângulos aqui, verificando se os pares (ALT/USDT, ALT/BTC) existem na MEXC.
+];
+const minProfitTriangular = 0.0005; // 0.05% de lucro líquido MÍNIMO
+
+// --- Configurações de Execução ---
+const interval = 3000; // Intervalo de busca (3 segundos)
+const mexcFee = 0.001; // 0.1% Taker Fee
+const tradeAmountUSDT = 10; // VALOR EM USDT PARA NEGOCIAR (AJUSTE CONFORME SEU SALDO!)
+
+// ===========================================
+// INSTÂNCIAS DAS CORRETORAS (APENAS MEXC)
+// ===========================================
+
 const mexc = new ccxt.mexc({
     apiKey: process.env.MEXC_API_KEY,
     secret: process.env.MEXC_SECRET,
+    options: { defaultFees: { trading: { taker: mexcFee } } }
 });
 
-const bitmart = new ccxt.bitmart({
-    apiKey: process.env.BITMART_API_KEY,
-    secret: process.env.BITMART_SECRET,
-    // O memo é específico da BitMart e é necessário se você o configurou
-    password: process.env.BITMART_MEMO, 
-    // O CCXT usa 'password' para o Memo/Passphrase da BitMart.
-});
+// ===========================================
+// FUNÇÃO DE EXECUÇÃO DE ORDEM (LOG APENAS)
+// ===========================================
 
-
-async function fetchArbitrageData() {
-    console.log(`Buscando dados em ${symbol} entre MEXC e BitMart...`);
-
+// Esta função agora é mais simples, pois não há exchange de compra/venda diferente
+async function executeTriangularArbitrage(triangle, profitPercent, amountUSDT, lotSize1, lotSize2, lotSize3) {
+    console.log(`\n================== 🚀 ALERTA DE EXECUÇÃO TRIANGULAR na MEXC ==================`);
+    console.log(`  Triângulo: ${triangle.alt}/BTC/USDT | Lucro Líquido: ${profitPercent.toFixed(4)}%`);
+    console.log(`  Capital: ${amountUSDT} USDT`);
+    
+    // !!! ATENÇÃO: A EXECUÇÃO REAL ESTÁ COMENTADA. DESCOMENTE PARA ATIVAR O BOT. !!!
+    /*
     try {
-        // Obter Livro de Ofertas da MEXC (Order Book)
-        const mexcOrderBook = await mexc.fetchOrderBook(symbol);
-        const mexcBid = mexcOrderBook.bids[0][0]; // Melhor preço de COMPRA na MEXC
-        const mexcAsk = mexcOrderBook.asks[0][0]; // Melhor preço de VENDA na MEXC
+        // Exemplo de execução das 3 ordens (adaptar preços e lados da ordem)
+        // 1. Ordem de Compra (e.g., ALT/USDT)
+        const order1 = await mexc.createLimitBuyOrder(triangle.pair1, lotSize1, price1);
+        // 2. Ordem Intermediária (e.g., ALT/BTC)
+        const order2 = await mexc.createLimitSellOrder(triangle.pair2, lotSize2, price2);
+        // 3. Ordem Final (e.g., BTC/USDT)
+        const order3 = await mexc.createLimitSellOrder(triangle.pair3, lotSize3, price3);
 
-        // Obter Livro de Ofertas da BitMart
-        const bitmartOrderBook = await bitmart.fetchOrderBook(symbol);
-        const bitmartBid = bitmartOrderBook.bids[0][0];
-        const bitmartAsk = bitmartOrderBook.asks[0][0];
+        console.log(`  -> Ordens enviadas. Verifique na MEXC.`);
+    } catch (error) {
+        console.error(`\n❌ ERRO FATAL AO CRIAR ORDEM TRIANGULAR: ${error.message}`);
+    }
+    */
+    console.log(`================================================================================`);
+}
 
-        console.log(`\n--- Dados em Tempo Real (${symbol}) ---`);
-        console.log(`MEXC | Compra (Bid): ${mexcBid} | Venda (Ask): ${mexcAsk}`);
-        console.log(`BitMart | Compra (Bid): ${bitmartBid} | Venda (Ask): ${bitmartAsk}`);
 
-        // 4. Lógica de Arbitragem: Calcular a Oportunidade (Spread)
+// ===========================================
+// LÓGICA DE ARBITRAGEM TRIANGULAR (MECX)
+// ===========================================
+
+async function checkTriangularArbitrage(exchange, triangle) {
+    const { alt, pair1, pair2, pair3 } = triangle;
+    
+    try {
+        // 1. BUSCAR LIVROS DE OFERTAS
+        const [book1, book2, book3] = await Promise.all([
+            exchange.fetchOrderBook(pair1), // Ex: SOL/USDT
+            exchange.fetchOrderBook(pair2), // Ex: SOL/BTC
+            exchange.fetchOrderBook(pair3), // Ex: BTC/USDT
+        ]);
         
-        // Cenario 1: Comprar Barato na MEXC (Ask) e Vender Caro na BitMart (Bid)
-        let spread1 = 0;
-        if (bitmartBid > mexcAsk) {
-            spread1 = (bitmartBid / mexcAsk - 1) * 100;
-            console.log(`\nOPORTUNIDADE 1 (MEXC -> BitMart): Spread Bruto: ${spread1.toFixed(4)}%`);
-        }
+        // Cenario 1: Rota Direta (USDT -> Alt -> BTC -> USDT)
+        // 1. Comprar ALT com USDT (Ask de ALT/USDT)
+        const price1_buy_alt_usdt = book1.asks[0][0]; 
+        // 2. Vender ALT por BTC (Bid de ALT/BTC)
+        const price2_sell_alt_btc = book2.bids[0][0]; 
+        // 3. Vender BTC por USDT (Bid de BTC/USDT)
+        const price3_sell_btc_usdt = book3.bids[0][0]; 
 
-        // Cenario 2: Comprar Barato na BitMart (Ask) e Vender Caro na MEXC (Bid)
-        let spread2 = 0;
-        if (mexcBid > bitmartAsk) {
-            spread2 = (mexcBid / bitmartAsk - 1) * 100;
-            console.log(`OPORTUNIDADE 2 (BitMart -> MEXC): Spread Bruto: ${spread2.toFixed(4)}%`);
-        }
+        // Cálculo do lucro simulado: começando com 1 USDT
+        let finalUSDT_route1 = (1 / price1_buy_alt_usdt) * price2_sell_alt_btc * price3_sell_btc_usdt;
+        const netProfit1 = finalUSDT_route1 - 1 - (3 * mexcFee); // 3 taxas
+        
+        // Cenario 2: Rota Inversa (USDT -> BTC -> Alt -> USDT)
+        // 1. Comprar BTC com USDT (Ask de BTC/USDT)
+        const price1_buy_btc_usdt = book3.asks[0][0];
+        // 2. Comprar ALT com BTC (Ask de ALT/BTC, depois inverter)
+        const price2_buy_alt_btc = book2.asks[0][0]; 
+        // 3. Vender ALT por USDT (Bid de ALT/USDT)
+        const price3_sell_alt_usdt = book1.bids[0][0];
+
+        // Cálculo do lucro simulado: começando com 1 USDT
+        let finalUSDT_route2 = (1 / price1_buy_btc_usdt) / price2_buy_alt_btc * price3_sell_alt_usdt;
+        const netProfit2 = finalUSDT_route2 - 1 - (3 * mexcFee); // 3 taxas
+
+        // ANÁLISE E LOG
+        if (netProfit1 > minProfitTriangular) {
+            console.log(`\n💎 OPORTUNIDADE TRIANGULAR na MEXC (${alt}/BTC/USDT) - Direta`);
+            console.log(`  Lucro Líquido: ${(netProfit1 * 100).toFixed(4)}%`);
+            await executeTriangularArbitrage(triangle, (netProfit1 * 100), tradeAmountUSDT, tradeAmountUSDT/price1_buy_alt_usdt, null, null); // Lotes simplificados
+        } else if (netProfit2 > minProfitTriangular) {
+            console.log(`\n💎 OPORTUNIDADE TRIANGULAR na MEXC (${alt}/BTC/USDT) - Inversa`);
+            console.log(`  Lucro Líquido: ${(netProfit2 * 100).toFixed(4)}%`);
+            await executeTriangularArbitrage(triangle, (netProfit2 * 100), tradeAmountUSDT, null, null, null); // Lotes simplificados
+        } 
 
     } catch (error) {
-        // Mensagens de erro de conexão ou API Key inválida aparecerão aqui
-        console.error('\nOcorreu um erro ao buscar os dados:', error.message);
-        console.log('\nVerifique se suas chaves de API no seu arquivo .env local estão corretas e se as permissões foram dadas.');
+        // Ignora erros de pares não suportados (comum em altcoins/BTC com baixa liquidez)
+        if (!error.message.includes('symbol is not supported')) {
+            // console.log(`❌ ERRO NO MONITORAMENTO TRIANGULAR de ${alt}: ${error.message}`);
+        }
     }
 }
 
-// Roda a função principal
-fetchArbitrageData();
+
+// ===========================================
+// FUNÇÃO PRINCIPAL QUE RODA EM LOOP
+// ===========================================
+
+async function mainLoop() {
+    console.log('----------------------------------------------------');
+    console.log(`[${new Date().toLocaleTimeString()}] INICIANDO BUSCA TRIANGULAR (APENAS MEXC)...`);
+    
+    // 1. Checagem de Saldo (Obrigatória antes de negociar)
+    let balancesChecked = true;
+    try {
+        const mexcBalance = await mexc.fetchBalance();
+        const mexcUSDT = mexcBalance.USDT ? mexcBalance.USDT.free : 0;
+        const mexcBTC = mexcBalance.BTC ? mexcBalance.BTC.free : 0; // Também precisamos de BTC para a rota inversa
+        
+        if (mexcUSDT < tradeAmountUSDT) {
+             console.log(`AVISO: Saldo insuficiente de USDT (${tradeAmountUSDT} USDT necessários). Saldo: ${mexcUSDT.toFixed(2)} USDT.`);
+             balancesChecked = false;
+        } else {
+             console.log(`SALDO OK. Capital de Negociação: ${tradeAmountUSDT} USDT.`);
+        }
+
+    } catch (error) {
+        console.error('❌ ERRO ao checar saldos da MEXC. Verifique suas chaves API. Pulando negociações.');
+        return; 
+    }
+    
+    // 2. Monitoramento de Arbitragem Triangular (Se Saldo OK)
+    if (balancesChecked) {
+        for (const triangle of trianglesToMonitor) {
+            await checkTriangularArbitrage(mexc, triangle); 
+        }
+    } else {
+         console.log('Monitoramento de Arbitragem Triangular desativado devido ao saldo de USDT insuficiente.');
+    }
+    
+    console.log(`Busca Finalizada. Esperando ${interval / 1000}s...`);
+}
+
+
+// Roda a função principal em loop
+setInterval(mainLoop, interval);
