@@ -1,4 +1,4 @@
-// index.js - Bot de Arbitragem Triangular (MEXC Spot - VERSÃO FINAL COM EXECUÇÃO)
+// index.js - Bot de Arbitragem Triangular (MEXC Spot - VERSÃO FINAL OTIMIZADA)
 
 const ccxt = require('ccxt');
 require('dotenv').config();
@@ -10,11 +10,11 @@ require('dotenv').config();
 // --- Arbitragem Triangular (Interna - MEXC) ---
 // ESTRUTURA: { alt: Nome, pair1: ALT/USDT, pair2: ALT/BTC, pair3: BTC/USDT }
 const trianglesToMonitor = [
-    // Pares originais (maior liquidez)
+    // Pares de alta liquidez
     { alt: 'ETH', pair1: 'ETH/USDT', pair2: 'ETH/BTC', pair3: 'BTC/USDT' },
     { alt: 'SOL', pair1: 'SOL/USDT', pair2: 'SOL/BTC', pair3: 'BTC/USDT' },
     
-    // Novos triângulos de alta/média liquidez (mais chances de ineficiência)
+    // Pares expandidos para aumentar oportunidades
     { alt: 'LTC', pair1: 'LTC/USDT', pair2: 'LTC/BTC', pair3: 'BTC/USDT' },
     { alt: 'ADA', pair1: 'ADA/USDT', pair2: 'ADA/BTC', pair3: 'BTC/USDT' },
     { alt: 'MATIC', pair1: 'MATIC/USDT', pair2: 'MATIC/BTC', pair3: 'BTC/USDT' },
@@ -22,11 +22,10 @@ const trianglesToMonitor = [
     { alt: 'DOGE', pair1: 'DOGE/USDT', pair2: 'DOGE/BTC', pair3: 'BTC/USDT' },
     { alt: 'TRX', pair1: 'TRX/USDT', pair2: 'TRX/BTC', pair3: 'BTC/USDT' },
     { alt: 'DOT', pair1: 'DOT/USDT', pair2: 'DOT/BTC', pair3: 'BTC/USDT' },
-    
-    // Adicione mais triângulos aqui se desejar (verifique a existência dos pares na MEXC)
 ];
 
-const minProfitTriangular = 0.0005; // 0.05% de lucro líquido MÍNIMO
+// ⭐️ AJUSTE CRUCIAL: REDUÇÃO PARA 0.01% PARA AUMENTAR A FREQUÊNCIA ⭐️
+const minProfitTriangular = 0.0001; // 0.01% de lucro líquido MÍNIMO 
 
 // --- Configurações de Execução ---
 const interval = 3000; // Intervalo de busca (3 segundos)
@@ -52,7 +51,6 @@ const mexc = new ccxt.mexc({
                 taker: mexcFee 
             } 
         },
-        // CORREÇÃO: CCXT ajusta automaticamente o offset (mais robusto)
         'adjustForTimeDifference': true, 
     },
     timeout: 15000 
@@ -110,7 +108,7 @@ async function executeTriangularArbitrage(triangle, profitPercent, prices, direc
             
             console.log(`\n✅ ARBITRAGEM COMPLETA. Retorno Final (Aproximado): ${parseFloat(order3.cost).toFixed(4)} USDT.`);
         } else {
-             // Esta seção precisaria ser implementada se a Rota Inversa for lucrativa
+             // Rota Inversa (USDT -> BTC -> ALT -> USDT) não implementada para execução
              console.log("  ⚠️ Rota Inversa detectada, mas a execução está desabilitada para simplificação.");
         }
 
@@ -207,7 +205,7 @@ async function mainLoop() {
 
 
 // ===========================================
-// INÍCIO DO BOT (SETUP DO PM2)
+// INÍCIO DO BOT
 // ===========================================
 
 (async () => {
